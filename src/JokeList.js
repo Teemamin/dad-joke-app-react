@@ -15,7 +15,8 @@ class JokeList extends Component{
     super()
     this.state ={
         //  JSON.parse get the jokes from localstorage if none return empty array
-        jokes : JSON.parse(window.localStorage.getItem("jokes") || "[]")
+        jokes : JSON.parse(window.localStorage.getItem("jokes") || "[]"),
+        isLoading : false
     }
     this.getJokes = this.getJokes.bind(this)
   }
@@ -35,12 +36,20 @@ class JokeList extends Component{
     }
 //get n copy all the prevstate and  jokes gotn bck frm the APi and update the current state with both
 // combine them both into a new array
-    this.setState(prevState=>({jokes:[...prevState.jokes, ...collectedJokes]}))
-    window.localStorage.setItem("jokes",JSON.stringify(collectedJokes))
+    this.setState(prevState=>({
+        jokes:[...prevState.jokes, ...collectedJokes],
+        isLoading : false
+        
+    })
+    //it will wait till state is done being set, then set the local storage
+    ,()=>window.localStorage.setItem("jokes",JSON.stringify(this.state.jokes))
+    )
+ 
   }
 
 handleAddJokes =()=>{
-    this.getJokes()
+    this.setState({isLoading:true},this.getJokes)
+    //having this.getJokes() as a call back will ensure it gets called after the loading state is chngd
 }
 
   handlevote = (id,delta)=>{
@@ -55,6 +64,14 @@ handleAddJokes =()=>{
   }
  
   render(){
+    if(this.state.isLoading){
+        return(
+            <div className="JokeList-spinner">
+                <i className='far fa-8x fa-laugh fa-spin' />
+                <h1 className="JokeList-title">Loading...</h1>
+            </div>
+        )
+    }
       let jokes = this.state.jokes.map((joke,i)=>{
           return <Joke joke={joke.joke} key={i} votes={joke.votes} id={joke.id}
             upvote={()=>this.handlevote(joke.id,1)}
@@ -62,6 +79,7 @@ handleAddJokes =()=>{
 
           />
       })
+     
     return (
       <div className="JokeList">
           <div className='JokeList-sidebar'>
